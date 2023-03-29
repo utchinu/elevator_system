@@ -62,3 +62,33 @@ def elevatorSystem(request):
         es_obj.delete()
         return Response({"res":"Elevator system deleted!"},status=status.HTTP_200_OK)        
         
+@api_view(['GET'])
+def elevatorDetails(request,id):
+    elevator_system_cnt=Elevator_system.objects.all().count()
+    if elevator_system_cnt==0:
+        data={'message':'Elevator system is not initialised'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)     
+    elevator=Elevator.objects.filter(elevator_id = id)[0]
+    if elevator == None:
+        data={'message':'Elevator with given key does not exist'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)
+    else:
+        elevator_json=get_customised_elevator_model(elevator)
+        print (elevator_json)
+        return Response(elevator_json,status=status.HTTP_200_OK) 
+    
+@api_view(['GET'])
+def allElevatorDetails(request):
+    elevator_system_cnt=Elevator_system.objects.all().count()
+    if elevator_system_cnt==0:
+        data={'message':'Elevator system is not initialised'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)     
+    all_elevators=Elevator.objects.all()
+    all_elevators_mod=[] 
+    for e in all_elevators:
+        all_elevators_mod.append(get_customised_elevator_model(e))
+    all_elevators_mod_json=json.dumps(all_elevators_mod)
+    return Response(all_elevators_mod,status=status.HTTP_200_OK)
+
+
+                  
