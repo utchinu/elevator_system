@@ -78,11 +78,11 @@ WSGI_APPLICATION = 'elevator_system.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'railway',
+        'NAME': 'postgres',
         'USER': 'postgres',
-        'PASSWORD': '2gBzIaJSXYe422AwZKK7',
-        'HOST': 'containers-us-west-158.railway.app',
-        'PORT': '7633',
+        'PASSWORD': 'a',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 

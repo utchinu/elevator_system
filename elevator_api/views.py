@@ -91,4 +91,27 @@ def allElevatorDetails(request):
     return Response(all_elevators_mod,status=status.HTTP_200_OK)
 
 
-                  
+@api_view(['GET','PATCH'])
+def maintainanceStatus(request,id):
+    """
+    To get/update the elevator's is_in_order status
+    """
+    print("aa")
+    if request.method=='GET':
+        print("aa")
+        elevator_system_cnt=Elevator_system.objects.all().count()
+        if elevator_system_cnt==0:
+            data={'message':'Elevator system is not initialised'}
+            return Response(data,status=status.HTTP_400_BAD_REQUEST)     
+        elevator=Elevator.objects.filter(elevator_id = id)[0]
+        if elevator == None:
+            data={'message':'Elevator with given key does not exist'}
+            return Response(data,status=status.HTTP_400_BAD_REQUEST)
+        else:
+            data={}
+            data["Eleavtor_id"]=elevator.elevator_id
+            data["Elevator_is_in_order"]=get_maintainance_string(elevator.is_in_order)
+            return Response(data,status=status.HTTP_200_OK)
+    else:
+        #patch api to be written
+        return Response({},status=status.HTTP_200_OK)

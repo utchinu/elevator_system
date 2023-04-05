@@ -7,5 +7,5 @@ urlpatterns = [
     path('elevator_system/',views.elevatorSystem),
     path('all_elevator_details/',views.allElevatorDetails),
     path('elevator_details/<int:id>/',views.elevatorDetails),
-    #path('change_maintainance_status/')
+    path('maintainance_status/<int:id>/',views.maintainanceStatus),
 ]
