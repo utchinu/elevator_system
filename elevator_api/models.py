@@ -16,6 +16,7 @@ class Elevator(models.Model):
     door_status=models.BooleanField(default=False)
     is_in_order=models.BooleanField(default=True)
     destinations=ArrayField(models.IntegerField())
+    current_floor=models.IntegerField(default=0)
 
     def __str__(self):
         return ("Elevator_id:"+str(self.elevator_id))

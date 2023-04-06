@@ -74,7 +74,6 @@ def elevatorDetails(request,id):
         return Response(data,status=status.HTTP_400_BAD_REQUEST)
     else:
         elevator_json=get_customised_elevator_model(elevator)
-        print (elevator_json)
         return Response(elevator_json,status=status.HTTP_200_OK) 
     
 @api_view(['GET'])
@@ -96,22 +95,52 @@ def maintainanceStatus(request,id):
     """
     To get/update the elevator's is_in_order status
     """
-    print("aa")
-    if request.method=='GET':
-        print("aa")
-        elevator_system_cnt=Elevator_system.objects.all().count()
-        if elevator_system_cnt==0:
-            data={'message':'Elevator system is not initialised'}
-            return Response(data,status=status.HTTP_400_BAD_REQUEST)     
-        elevator=Elevator.objects.filter(elevator_id = id)[0]
-        if elevator == None:
-            data={'message':'Elevator with given key does not exist'}
-            return Response(data,status=status.HTTP_400_BAD_REQUEST)
-        else:
+    elevator_system_cnt=Elevator_system.objects.all().count()
+    if elevator_system_cnt==0:
+        data={'message':'Elevator system is not initialised'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)     
+    elevator=Elevator.objects.filter(elevator_id = id)[0]
+
+    if elevator == None:
+        data={'message':'Elevator with given key does not exist'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)
+    else:
+        if request.method=='GET':
             data={}
             data["Eleavtor_id"]=elevator.elevator_id
             data["Elevator_is_in_order"]=get_maintainance_string(elevator.is_in_order)
             return Response(data,status=status.HTTP_200_OK)
+        elif request.method=='PATCH':
+            print(request.data)
+            elevator.is_in_order= ((request.data.get('is_in_order')).lower()=="true")
+            elevator.save()
+            elevator_json=get_customised_elevator_model(elevator)
+            return Response(elevator_json,status=status.HTTP_200_OK) 
+        
+@api_view(['PATCH'])
+def elevatorRequestForFloor(request,id):
+    """
+    When a particular elevator is requested for a particular floor
+    """
+    elevator_system_cnt=Elevator_system.objects.all().count()
+    if elevator_system_cnt==0:
+        data={'message':'Elevator system is not initialised'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)     
+    elevator=Elevator.objects.filter(elevator_id = id)[0]
+
+    if elevator == None:
+        data={'message':'Elevator with given key does not exist'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)
     else:
-        #patch api to be written
-        return Response({},status=status.HTTP_200_OK)
+        requested_floor=request.data.get('floor')
+        if requested_floor >= elevator_system_cnt or requested_floor<0 :
+            data={'message':'Elevator cannot be requested to this floor'}
+            return Response(data,status=status.HTTP_400_BAD_REQUEST)    
+        destinations=elevator.destinations
+        if len(destinations)==0:
+            destinations.append(requested_floor)
+        #to be modified
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)
+
+
+            
