@@ -38,3 +38,59 @@ def get_customised_elevator_model(elevator:Elevator):
     elevator_dict["is_in_order"]=get_maintainance_string(elevator.is_in_order)
 
     return elevator_dict
+
+def get_elevator_direction(cur_floor,next_floor):
+    if next_floor>cur_floor:
+        return("UP")
+    else:
+        return("DOWN")
+    
+
+def add_floor_in_destinations(cur_floor:int,req_floor:int,destinations:list):
+    if req_floor in destinations or cur_floor in destinations:
+        return destinations
+    
+    dir=get_elevator_direction(cur_floor,destinations[0])
+    is_added=False
+
+    for i in range(0,len(destinations)):
+        new_dir=get_elevator_direction(cur_floor,destinations[i])
+        if new_dir==dir:
+            if req_floor>min(cur_floor,destinations[i]) and req_floor<max(cur_floor,destinations[i]):
+                is_added=True
+                destinations=destinations.insert(i,req_floor)
+                break
+        else:
+            if new_dir=="UP":
+                if req_floor<cur_floor:
+                    is_added=True
+                    destinations=destinations.insert(i,req_floor)
+                    break
+            else:
+                if req_floor>cur_floor:
+                    is_added=True
+                    destinations=destinations.insert(i,req_floor)
+                    break
+        cur_floor=destinations[i]
+    
+    if is_added==False:
+        destinations.append(req_floor)
+    return destinations
+    
+def move_elevator_to_next_floor(elevator:Elevator):
+    if len(elevator.destinations)==0:
+        return
+
+    elevator.current_floor=elevator.destinations[0]
+    for i in range(1,len(elevator.destinations)):
+        elevator.destinations[i-1]=elevator.destinations[i]
+    elevator.destinations.pop()
+    elevator.door_status=True
+    elevator.save()
+    return
+
+
+                
+                
+
+    

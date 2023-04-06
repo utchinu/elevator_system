@@ -132,15 +132,25 @@ def elevatorRequestForFloor(request,id):
         data={'message':'Elevator with given key does not exist'}
         return Response(data,status=status.HTTP_400_BAD_REQUEST)
     else:
+        elevator_system=Elevator_system.objects.all()[0]
+
         requested_floor=request.data.get('floor')
-        if requested_floor >= elevator_system_cnt or requested_floor<0 :
+        if requested_floor >= elevator_system.floors_cnt or requested_floor<0 :
             data={'message':'Elevator cannot be requested to this floor'}
             return Response(data,status=status.HTTP_400_BAD_REQUEST)    
         destinations=elevator.destinations
+        cur_floor=elevator.current_floor
         if len(destinations)==0:
-            destinations.append(requested_floor)
-        #to be modified
-        return Response(data,status=status.HTTP_400_BAD_REQUEST)
+            if cur_floor!=requested_floor :
+                destinations.append(requested_floor)
+        else:
+            destinations=add_floor_in_destinations(requested_floor,destinations)
+
+        if elevator.door_status==False:
+            move_elevator_to_next_floor(elevator)
+
+        elevator_json=get_customised_elevator_model(elevator)
+        return Response(elevator_json,status=status.HTTP_200_OK) 
 
 
             
