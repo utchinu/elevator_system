@@ -134,7 +134,7 @@ def elevatorRequestForFloor(request,id):
     else:
         elevator_system=Elevator_system.objects.all()[0]
 
-        requested_floor=request.data.get('floor')
+        requested_floor=int(request.data.get('floor'))
         if requested_floor >= elevator_system.floors_cnt or requested_floor<0 :
             data={'message':'Elevator cannot be requested to this floor'}
             return Response(data,status=status.HTTP_400_BAD_REQUEST)    
@@ -151,6 +151,49 @@ def elevatorRequestForFloor(request,id):
 
         elevator_json=get_customised_elevator_model(elevator)
         return Response(elevator_json,status=status.HTTP_200_OK) 
+    
+@api_view(['GET','PATCH'])
+def doorStatus(request,id):
 
+    elevator_system_cnt=Elevator_system.objects.all().count()
+    if elevator_system_cnt==0:
+        data={'message':'Elevator system is not initialised'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)     
+    elevator=Elevator.objects.filter(elevator_id = id)[0]
 
-            
+    if elevator == None:
+        data={'message':'Elevator with given key does not exist'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)
+    else:
+        if request.method=='GET':
+            data={}
+            data["Eleavtor_id"]=elevator.elevator_id
+            data["Door_status"]=get_door_status_string(elevator.door_status)
+            return Response(data,status=status.HTTP_200_OK)
+        else:
+            elevator.door_status= ((request.data.get('door_status')).lower()=="open")
+            elevator.save()
+            elevator_json=get_customised_elevator_model(elevator)
+            return Response(elevator_json,status=status.HTTP_200_OK)                              
+
+@api_view(['GET'])
+def nextDestination(request,id):
+    elevator_system_cnt=Elevator_system.objects.all().count()
+    if elevator_system_cnt==0:
+        data={'message':'Elevator system is not initialised'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)     
+    elevator=Elevator.objects.filter(elevator_id = id)[0]
+
+    if elevator == None:
+        data={'message':'Elevator with given key does not exist'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)
+    else:
+        if len(elevator.destinations)==0:
+            data={'message':'Next destination deos not exist'}
+            return Response(data,status=status.HTTP_400_BAD_REQUEST)                     
+        data={}
+        data["Eleavtor_id"]=elevator.elevator_id
+        data["Next_destination"]=elevator.destinations[0]
+        return Response(data,status=status.HTTP_200_OK)       
+
+ 
