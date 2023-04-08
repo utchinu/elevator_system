@@ -11,9 +11,21 @@ import json
 @api_view(['GET'])
 def getRoutes(request):
     routes = [
-        'GET /api',
-        'GET /api/rooms',
-        'GET /api/rooms/:id'
+        'GET /elevator_api/elevator_system/',
+        'POST /elevator_api/elevator_system/',
+        'DELETE /elevator_api/elevator_system/',
+
+        'GET /elevator_api/all_elevator_details/',
+        'GET /elevator_api/elevator_details/:id/',
+        'GET /elevator_api/maintainance_status/:id/',
+        'PATCH /elevator_api/maintainance_status/:id/',
+
+        'GET /elevator_api/door_status/:id/',
+        'PATCH /elevator_api/door_status/:id/',
+
+        'GET /elevator_api/next_destination/:id/',
+
+        'PATCH /elevator_api/elevator_request_for_floor/:id/'
     ]
     return Response(routes)
 
@@ -95,6 +107,7 @@ def maintainanceStatus(request,id):
     """
     To get/update the elevator's is_in_order status
     """
+
     elevator_system_cnt=Elevator_system.objects.all().count()
     if elevator_system_cnt==0:
         data={'message':'Elevator system is not initialised'}
@@ -113,6 +126,9 @@ def maintainanceStatus(request,id):
         elif request.method=='PATCH':
             print(request.data)
             elevator.is_in_order= ((request.data.get('is_in_order')).lower()=="true")
+            if elevator.is_in_order == False:
+                elevator.destinations.clear()
+                elevator.current_floor=0
             elevator.save()
             elevator_json=get_customised_elevator_model(elevator)
             return Response(elevator_json,status=status.HTTP_200_OK) 
@@ -131,21 +147,34 @@ def elevatorRequestForFloor(request,id):
     if elevator == None:
         data={'message':'Elevator with given key does not exist'}
         return Response(data,status=status.HTTP_400_BAD_REQUEST)
+    elif elevator.is_in_order == False:
+        data={'message':'Elevator is not in order currently'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)        
     else:
+        print("aaaaaaaaaa")
         elevator_system=Elevator_system.objects.all()[0]
 
         requested_floor=int(request.data.get('floor'))
         if requested_floor >= elevator_system.floors_cnt or requested_floor<0 :
             data={'message':'Elevator cannot be requested to this floor'}
             return Response(data,status=status.HTTP_400_BAD_REQUEST)    
-        destinations=elevator.destinations
+        
+        print(elevator.destinations)
         cur_floor=elevator.current_floor
-        if len(destinations)==0:
+        if len(elevator.destinations)==0:
+            print("aaa")
             if cur_floor!=requested_floor :
-                destinations.append(requested_floor)
+                elevator.destinations.append(requested_floor)
         else:
-            destinations=add_floor_in_destinations(requested_floor,destinations)
+            print("utkarsh")
+            elevator.destinations=add_floor_in_destinations(elevator.current_floor,requested_floor,elevator.destinations)
+            print("bye")
 
+
+        print("helllllo")
+        print(elevator.destinations)
+        elevator.save()
+        print("alll")
         if elevator.door_status==False:
             move_elevator_to_next_floor(elevator)
 
@@ -168,11 +197,12 @@ def doorStatus(request,id):
         if request.method=='GET':
             data={}
             data["Eleavtor_id"]=elevator.elevator_id
-            data["Door_status"]=get_door_status_string(elevator.door_status)
             return Response(data,status=status.HTTP_200_OK)
         else:
             elevator.door_status= ((request.data.get('door_status')).lower()=="open")
             elevator.save()
+            if elevator.door_status==False:
+                move_elevator_to_next_floor(elevator)
             elevator_json=get_customised_elevator_model(elevator)
             return Response(elevator_json,status=status.HTTP_200_OK)                              
 
@@ -196,4 +226,3 @@ def nextDestination(request,id):
         data["Next_destination"]=elevator.destinations[0]
         return Response(data,status=status.HTTP_200_OK)       
 
- 
