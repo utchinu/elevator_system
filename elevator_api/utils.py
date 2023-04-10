@@ -49,7 +49,7 @@ def get_elevator_direction(cur_floor,next_floor):
 
 def add_floor_in_destinations(cur_floor:int,req_floor:int,destinations:list):
     print(destinations)
-    if req_floor in destinations or cur_floor in destinations:
+    if req_floor in destinations or cur_floor==req_floor:
         return destinations
     
     dir=get_elevator_direction(cur_floor,destinations[0])
