@@ -8,6 +8,8 @@ class Elevator_system(models.Model):
 
     def __str__(self):
         return ("floor cnt:"+str(self.floors_cnt)+"\n elevator_cnt :"+str(self.elevator_cnt))
+    
+
 
 
 class Elevator(models.Model):
@@ -20,5 +22,8 @@ class Elevator(models.Model):
 
     def __str__(self):
         return ("Elevator_id:"+str(self.elevator_id))
+    
+    class Meta:
+        ordering=('elevator_id',)
 
 

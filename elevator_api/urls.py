@@ -11,4 +11,5 @@ urlpatterns = [
     path('door_status/<int:id>/',views.doorStatus),
     path('next_destination/<int:id>/',views.nextDestination),
     path('elevator_request_for_floor/<int:id>/',views.elevatorRequestForFloor),
+    path('request_for_floor/',views.RequestForFloor),
 ]

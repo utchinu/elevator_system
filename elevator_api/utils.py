@@ -45,35 +45,71 @@ def get_elevator_direction(cur_floor,next_floor):
         return("UP")
     else:
         return("DOWN")
+
+def get_distance_for_floor_in_elevator(cur_floor:int,req_floor:int,destinations:list):
     
+    dist=0
+    if cur_floor==req_floor:
+        return (0)
+    elif req_floor in destinations:
+        if destinations[0]==req_floor:
+            dist=abs(cur_floor-req_floor)
+        else:
+            for i in range(0,len(destinations)):
+                dist+=abs(cur_floor-destinations[i])
+                if destinations[i]==req_floor:
+                    break
+                cur_floor=destinations[i]
+        return dist
+
+
+    
+    dir=get_elevator_direction(cur_floor,destinations[0])
+
+    for i in range(0,len(destinations)):
+        new_dir=get_elevator_direction(cur_floor,destinations[i])
+        if new_dir==dir:
+            if req_floor>min(cur_floor,destinations[i]) and req_floor<max(cur_floor,destinations[i]):
+                break
+        else:
+            if new_dir=="UP":
+                if req_floor<destinations[i]:
+                    break
+            else:
+                if req_floor>destinations[i]:
+                    break
+        dist+=abs(destinations[i]-cur_floor)
+        cur_floor=destinations[i]
+    
+    dist+=abs(req_floor-cur_floor)
+    return dist
+
+
 
 def add_floor_in_destinations(cur_floor:int,req_floor:int,destinations:list):
-    print(destinations)
+
     if req_floor in destinations or cur_floor==req_floor:
         return destinations
     
     dir=get_elevator_direction(cur_floor,destinations[0])
+
     is_added=False
 
     for i in range(0,len(destinations)):
         new_dir=get_elevator_direction(cur_floor,destinations[i])
         if new_dir==dir:
-            print("a")
             if req_floor>min(cur_floor,destinations[i]) and req_floor<max(cur_floor,destinations[i]):
                 is_added=True
-                print("b")
                 destinations.insert(i,req_floor)
-                print(destinations)
-                print("c")
                 break
         else:
             if new_dir=="UP":
-                if req_floor<cur_floor:
+                if req_floor<destinations[i]:
                     is_added=True
                     destinations.insert(i,req_floor)
                     break
             else:
-                if req_floor>cur_floor:
+                if req_floor>destinations[i]:
                     is_added=True
                     destinations.insert(i,req_floor)
                     break
@@ -81,8 +117,7 @@ def add_floor_in_destinations(cur_floor:int,req_floor:int,destinations:list):
     
     if is_added==False:
         destinations.append(req_floor)
-    print("hello")
-    print(destinations)
+
     return destinations
     
 def move_elevator_to_next_floor(elevator:Elevator):

@@ -25,7 +25,9 @@ def getRoutes(request):
 
         'GET /elevator_api/next_destination/:id/',
 
-        'PATCH /elevator_api/elevator_request_for_floor/:id/'
+        'PATCH /elevator_api/elevator_request_for_floor/:id/',
+
+        'PATCH /elevator_api/request_for_floor/'
     ]
     return Response(routes)
 
@@ -34,7 +36,9 @@ def elevatorSystem(request):
 
 
     """
-    To initialise the elevator sytem
+    POST:To initialise the elevator sytem
+    GET: To get the details of the elevator system
+    DELETE: To delete the existing eleavator system
 
     """
     if request.method=='POST':
@@ -76,6 +80,11 @@ def elevatorSystem(request):
         
 @api_view(['GET'])
 def elevatorDetails(request,id):
+    """
+    GET: To get the details of a particular elevator(id will be provided)
+    """
+
+
     elevator_system_cnt=Elevator_system.objects.all().count()
     if elevator_system_cnt==0:
         data={'message':'Elevator system is not initialised'}
@@ -90,6 +99,10 @@ def elevatorDetails(request,id):
     
 @api_view(['GET'])
 def allElevatorDetails(request):
+
+    """
+    GET: To get the details of all the elevators
+    """
     elevator_system_cnt=Elevator_system.objects.all().count()
     if elevator_system_cnt==0:
         data={'message':'Elevator system is not initialised'}
@@ -105,7 +118,8 @@ def allElevatorDetails(request):
 @api_view(['GET','PATCH'])
 def maintainanceStatus(request,id):
     """
-    To get/update the elevator's is_in_order status
+    GET: To get the elevator's maintainance status(id will be provided)
+    PATCH:  To UPDATE the elevator's maintainance status(id will be provided)
     """
 
     elevator_system_cnt=Elevator_system.objects.all().count()
@@ -124,11 +138,11 @@ def maintainanceStatus(request,id):
             data["Elevator_is_in_order"]=get_maintainance_string(elevator.is_in_order)
             return Response(data,status=status.HTTP_200_OK)
         elif request.method=='PATCH':
-            print(request.data)
             elevator.is_in_order= ((request.data.get('is_in_order')).lower()=="true")
             if elevator.is_in_order == False:
                 elevator.destinations.clear()
                 elevator.current_floor=0
+                elevator.door_status=False
             elevator.save()
             elevator_json=get_customised_elevator_model(elevator)
             return Response(elevator_json,status=status.HTTP_200_OK) 
@@ -136,7 +150,8 @@ def maintainanceStatus(request,id):
 @api_view(['PATCH'])
 def elevatorRequestForFloor(request,id):
     """
-    When a particular elevator is requested for a particular floor
+        PATCH:When a particular elevator is requested for a particular floor("floor" has to be provided with 'elevator id').
+        This api will update the destination string(append this req_floor at a location which minimises the overall duration of the elevator)
     """
     elevator_system_cnt=Elevator_system.objects.all().count()
     if elevator_system_cnt==0:
@@ -151,7 +166,6 @@ def elevatorRequestForFloor(request,id):
         data={'message':'Elevator is not in order currently'}
         return Response(data,status=status.HTTP_400_BAD_REQUEST)        
     else:
-        print("aaaaaaaaaa")
         elevator_system=Elevator_system.objects.all()[0]
 
         requested_floor=int(request.data.get('floor'))
@@ -159,22 +173,18 @@ def elevatorRequestForFloor(request,id):
             data={'message':'Elevator cannot be requested to this floor'}
             return Response(data,status=status.HTTP_400_BAD_REQUEST)    
         
-        print(elevator.destinations)
+        #print(elevator.destinations)
         cur_floor=elevator.current_floor
         if len(elevator.destinations)==0:
-            print("aaa")
             if cur_floor!=requested_floor :
                 elevator.destinations.append(requested_floor)
         else:
-            print("utkarsh")
             elevator.destinations=add_floor_in_destinations(elevator.current_floor,requested_floor,elevator.destinations)
-            print("bye")
 
 
-        print("helllllo")
-        print(elevator.destinations)
+        #print(elevator.destinations)
         elevator.save()
-        print("alll")
+
         if elevator.door_status==False:
             move_elevator_to_next_floor(elevator)
 
@@ -184,6 +194,10 @@ def elevatorRequestForFloor(request,id):
 @api_view(['GET','PATCH'])
 def doorStatus(request,id):
 
+    """
+        GET: To get the elevator's door status(id will be provided)
+        PATCH:  To UPDATE the elevator's door status(id will be provided)
+    """
     elevator_system_cnt=Elevator_system.objects.all().count()
     if elevator_system_cnt==0:
         data={'message':'Elevator system is not initialised'}
@@ -208,6 +222,9 @@ def doorStatus(request,id):
 
 @api_view(['GET'])
 def nextDestination(request,id):
+    """
+    GET: To get the next destination of a particular elevator
+    """
     elevator_system_cnt=Elevator_system.objects.all().count()
     if elevator_system_cnt==0:
         data={'message':'Elevator system is not initialised'}
@@ -226,3 +243,51 @@ def nextDestination(request,id):
         data["Next_destination"]=elevator.destinations[0]
         return Response(data,status=status.HTTP_200_OK)       
 
+@api_view(['PATCH'])
+def RequestForFloor(request):
+
+    """
+        PATCH:When a floor is requested irrespective of the elevator("floor" has to be provided).
+        This api will find the elevator with which given floor can be reached in minimum time.
+        Then will update the destination string of that elevator
+    """
+    elevator_system_cnt=Elevator_system.objects.all().count()
+    if elevator_system_cnt==0:
+        data={'message':'Elevator system is not initialised'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)     
+    elevator_list=Elevator.objects.filter(is_in_order = True)
+
+    if len(elevator_list)==0:
+        data={'message':'No working elevator exists'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)          
+
+    requested_floor=int(request.data.get('floor'))
+    elevator_system=Elevator_system.objects.all()[0]
+    if requested_floor >= elevator_system.floors_cnt or requested_floor<0 :
+        data={'message':'Elevator cannot be requested to this floor'}
+        return Response(data,status=status.HTTP_400_BAD_REQUEST)      
+
+    chosen_elevator=elevator_list[0]
+    chosen_dist=1e18
+
+    for e in elevator_list:
+        temp_dist=get_distance_for_floor_in_elevator(e.current_floor,requested_floor,e.destinations)
+        if temp_dist<chosen_dist:
+            chosen_dist=temp_dist
+            chosen_elevator=e
+    
+ 
+    cur_floor=chosen_elevator.current_floor
+    if len(chosen_elevator.destinations)==0:
+        if cur_floor!=requested_floor :
+            chosen_elevator.destinations.append(requested_floor)
+    else:
+        chosen_elevator.destinations=add_floor_in_destinations(chosen_elevator.current_floor,requested_floor,chosen_elevator.destinations)
+
+    chosen_elevator.save()
+
+    if chosen_elevator.door_status==False:
+        move_elevator_to_next_floor(chosen_elevator)
+
+    elevator_json=get_customised_elevator_model(chosen_elevator)
+    return Response(elevator_json,status=status.HTTP_200_OK)    
